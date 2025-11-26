@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserRegistrationSerializer
+from .serializers import UserRegistrationSerializer, CustomTokenOntainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class RegisterUserView(APIView):
@@ -24,4 +25,5 @@ class RegisterUserView(APIView):
             'message': 'Registro exitoso, Usuario creado.'
         }, status=status.HTTP_201_CREATED)
 
-
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenOntainPairSerializer
