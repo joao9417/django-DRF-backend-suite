@@ -23,4 +23,7 @@ urlpatterns = [
     
     #acoplamiento y versionamiento de la API
     path('api/v1/', include('authentication.urls')),
+    
+    #rutas de la aplicacion presupuestos
+    path('api/v1/', include('presupuestos.urls')),
 ]
