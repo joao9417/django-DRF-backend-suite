@@ -26,4 +26,7 @@ urlpatterns = [
     
     #rutas de la aplicacion presupuestos
     path('api/v1/', include('presupuestos.urls')),
+    
+    #rutas de la aplicacion coldrooms
+    path('api/v1/', include('coldrooms.urls')),
 ]
