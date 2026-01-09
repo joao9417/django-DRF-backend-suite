@@ -25,8 +25,11 @@ urlpatterns = [
     path('api/v1/', include('authentication.urls')),
     
     #rutas de la aplicacion presupuestos
-    path('api/v1/', include('presupuestos.urls')),
+    path('api/v1/presupuestos/', include('presupuestos.urls')),
     
     #rutas de la aplicacion coldrooms
-    path('api/v1/', include('coldrooms.urls')),
+    path('api/v1/coldrooms/', include('coldrooms.urls')),
+
+    #rutas de la aplicacion equipos
+    path('api/v1/equipos/', include('equipos.urls')),
 ]
