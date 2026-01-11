@@ -78,7 +78,7 @@ cd backend-suite-budget
 python -m venv venv
 
 # Activar entorno (Windows)
-venv\Scripts\activate
+venv\Scripts\activate.ps1
 
 # Activar entorno (Linux/Mac)
 source venv/bin/activate
