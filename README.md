@@ -51,14 +51,14 @@
 - ✅ Configuración por entorno
 
 ## 🏗️ Arquitectura
-├── 📁 authentication/ # Sistema de autenticación JWT
-├── 📁 presupuestos/ # Gestión de presupuestos
-├── 📁 coldrooms/ # Gestión de cuartos fríos
-├── 📁 equipos/ # Gestión de equipos
-├── 📁 core_project/ # Configuración principal
-├── 📄 requirements.txt # Dependencias del proyecto
-├── 📄 manage.py # Script de gestión Django
-└── 📄 .env.example # Variables de entorno
+-├── 📁 authentication/ # Sistema de autenticación JWT
+-├── 📁 presupuestos/ # Gestión de presupuestos
+-├── 📁 coldrooms/ # Gestión de cuartos fríos
+-├── 📁 equipos/ # Gestión de equipos
+-├── 📁 core_project/ # Configuración principal
+-├── 📄 requirements.txt # Dependencias del proyecto
+-├── 📄 manage.py # Script de gestión Django
+-└── 📄 .env.example # Variables de entorno
 
 
 ## 🚀 Instalación
