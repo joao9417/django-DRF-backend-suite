@@ -1,145 +1,76 @@
-# 🏢 Suite Budget API
+# Suite Budget API
+API backend para sistema de gestión de presupuestos de refrigeracion industrial desarrollada con Django REST Framework.
 
-![Django](https://img.shields.io/badge/Django-4.2-green.svg)
-![DRF](https://img.shields.io/badge/DRF-3.14-blue.svg)
-![JWT](https://img.shields.io/badge/JWT-Auth-orange.svg)
+![Django](https://img.shields.io/badge/Django-5.2-green.svg)
+![DRF](https://img.shields.io/badge/DRF-3.16-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-yellow.svg)
+![JWT](https://img.shields.io/badge/JWT-Auth-orange.svg)
+![CORS](https://img.shields.io/badge/CORS-Enabled-brightgreen.svg)
 
-**Sistema de Gestión de Presupuestos con API RESTful** - Backend desarrollado en Django REST Framework con autenticación JWT.
+### Instalacion Rapida
+1. Clonar repositorio.
+	```bash 
+	git clone https://github.com/tuusuario/backend-suite-budget.git
+	cd backend-suite-budget
+	```
+ 
+ 2. Crear entorno virtual
+	```bash
+	python -m venv venv
+	
+	Windows
+	venv\Scripts\activate.ps1
+	    
+	Linux/Mac
+	source venv/bin/activate
+	```
+ 
+3. Instalar dependencias
+	```bash
+	pip install -r requirements.txt
+	```
+   
+4. Configurar variables de entorno (copia .env.example a .env y edita)
+	```bash
+	DB_NAME= db_name
+	DB_USER= db_user
+	DB_PASSWORD= db_password
+	DB_HOST= localhost
+	DB_PORT= 5432
+	```
 
-## 📑 Tabla de Contenidos
-- [✨ Características](#-características)
-- [🏗️ Arquitectura](#️-arquitectura)
-- [🚀 Instalación](#-instalación)
-- [⚙️ Configuración](#️-configuración)
-- [🔐 Autenticación](#-autenticación)
-- [📚 API Documentation](#-api-documentation)
-- [🧪 Testing](#-testing)
-- [📁 Estructura del Proyecto](#-estructura-del-proyecto)
-- [🔄 Endpoints Principales](#-endpoints-principales)
-- [👥 Contribución](#-contribución)
-- [📄 Licencia](#-licencia)
+5. Migrar base de datos y ejecutar
+	```bash
+	python manage.py migrate
+	python manage.py runserver
+	```
 
-## ✨ Características
+### Documentacion de la API
+- **Swagger UI**: http://localhost:8000/swagger/
+- **ReDoc**: http://localhost:8000/redoc/
 
-### 🔐 **Autenticación y Autorización**
-El sistema utiliza **SimpleJWT** para la gestión de sesiones.
+### Endpoints Principales
+**Autenticacion**
+- POST /api/v1/register/ - Registrar usuario
+- POST /api/v1/login/ - Iniciar sesion (obtener JWT)
+- POST /api/v1/token/refresh/ - Refrescar token
+- GET /api/v1/profile/ - Ver perfil (requiere autenticacion)
 
-### Flujo de Acceso
-1. **Registro:** `POST /api/v1/register/` - Crea cuenta y perfil (cargo).
-2. **Login:** `POST /api/v1/login/` - Retorna `access` y `refresh` tokens.
-3. **Refresco:** `POST /api/v1/token/refresh/` - Renueva el token de acceso.
+### Ejecutar test
+```bash 
+	python manage.py test
+	python manage.py test authentication #Ejecuta solo el test de authentication
+```
 
-### Diagrama de Identidad
-
-
-```mermaid
-erDiagram
-    USER ||--|| PROFILE : has
-    USER {
-        string username
-        string email
-        string password
-    }
-    PROFILE {
-        string cargo
-    }
-
-
-### 📊 **Gestión de Datos**
-- ✅ API RESTful completa
-- ✅ Serializadores para validación de datos
-- ✅ Modelos relacionales optimizados
-- ✅ Filtros y búsquedas avanzadas
-- ✅ Documentación automática con Swagger
-
-### 🛡️ **Seguridad**
-- ✅ Contraseñas hasheadas (bcrypt)
-- ✅ Validación de fortaleza de contraseñas
-- ✅ Tokens JWT con expiración configurable
-- ✅ Protección contra CSRF
-- ✅ Validación de datos en backend
-
-### 🔧 **Desarrollo**
-- ✅ Tests automatizados completos
-- ✅ Entorno virtual aislado
-- ✅ Migraciones de base de datos
-- ✅ API documentada automáticamente
-- ✅ Configuración por entorno
-
-## 🏗️ Estructura del proyecto
+### Estructura del Proyecto
 ```text
-├── 📁 authentication/ # Sistema de autenticación JWT
-├── 📁 presupuestos/ # Gestión de presupuestos
-├── 📁 coldrooms/ # Gestión de cuartos fríos
-├── 📁 equipos/ # Gestión de equipos
-├── 📁 core_project/ # Configuración principal
-├── 📄 requirements.txt # Dependencias del proyecto
-├── 📄 manage.py # Script de gestión Django
-└── 📄 .env.example # Variables de entorno
-
-
-## 🚀 Instalación
-
-### Prerrequisitos
-- Python 3.11 o superior
-- PostgreSQL 14+ (recomendado) o SQLite
-- Git
-
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/tuusuario/backend-suite-budget.git
-cd backend-suite-budget
-
-### 2. Configurar entorno virtual
-# Crear entorno virtual
-python -m venv venv
-
-# Activar entorno (Windows)
-venv\Scripts\activate.ps1
-
-# Activar entorno (Linux/Mac)
-source venv/bin/activate
-
-### 3. Instalar dependencias
-pip install -r requirements.txt
-
-### 4. Configurar variables de entorno
-# Copiar archivo de ejemplo
-cp .env.example .env
-
-# Editar .env con tus configuraciones
-nano .env  # o usar tu editor preferido
-
-# Variables de entorno requeridas
-# Django
-SECRET_KEY=tu_clave_secreta_unica
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Base de datos
-DB_ENGINE=django.db.backends.postgresql
-DB_NAME=suite_budget
-DB_USER=postgres
-DB_PASSWORD=tu_password
-DB_HOST=localhost
-DB_PORT=5432
-
-# JWT (opcional, usar valores por defecto o personalizar)
-JWT_ACCESS_TOKEN_LIFETIME=5
-JWT_REFRESH_TOKEN_LIFETIME=1
-
-### 5. Configurar base de datos
-# Aplicar migraciones
-python manage.py migrate
-
-# Crear superusuario (opcional)
-python manage.py createsuperuser
-
-### 6. Ejecutar servidor de desarrollo
-python manage.py runserver
-
-
-
-
-
+		backend-suite-budget/
+	├── authentication/      # Sistema de autenticación JWT
+	├── presupuestos/       # Gestión de presupuestos
+	├── coldrooms/         # Gestión de cuartos fríos
+	├── equipos/           # Gestión de equipos
+	├── core_project/      # Configuración principal
+	├── requirements.txt   # Dependencias
+	└── manage.py         # Script de Django
+```
