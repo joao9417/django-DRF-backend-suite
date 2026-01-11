@@ -23,11 +23,28 @@
 ## ✨ Características
 
 ### 🔐 **Autenticación y Autorización**
-- ✅ Registro de usuarios con validación avanzada
-- ✅ Login con tokens JWT (access + refresh)
-- ✅ Protección de endpoints con permisos
-- ✅ Perfiles de usuario personalizados con cargo
-- ✅ Refresh automático de tokens
+El sistema utiliza **SimpleJWT** para la gestión de sesiones.
+
+### Flujo de Acceso
+1. **Registro:** `POST /api/v1/register/` - Crea cuenta y perfil (cargo).
+2. **Login:** `POST /api/v1/login/` - Retorna `access` y `refresh` tokens.
+3. **Refresco:** `POST /api/v1/token/refresh/` - Renueva el token de acceso.
+
+### Diagrama de Identidad
+
+
+```mermaid
+erDiagram
+    USER ||--|| PROFILE : has
+    USER {
+        string username
+        string email
+        string password
+    }
+    PROFILE {
+        string cargo
+    }
+
 
 ### 📊 **Gestión de Datos**
 - ✅ API RESTful completa
@@ -50,15 +67,16 @@
 - ✅ API documentada automáticamente
 - ✅ Configuración por entorno
 
-## 🏗️ Arquitectura
--├── 📁 authentication/ # Sistema de autenticación JWT
--├── 📁 presupuestos/ # Gestión de presupuestos
--├── 📁 coldrooms/ # Gestión de cuartos fríos
--├── 📁 equipos/ # Gestión de equipos
--├── 📁 core_project/ # Configuración principal
--├── 📄 requirements.txt # Dependencias del proyecto
--├── 📄 manage.py # Script de gestión Django
--└── 📄 .env.example # Variables de entorno
+## 🏗️ Estructura del proyecto
+```text
+├── 📁 authentication/ # Sistema de autenticación JWT
+├── 📁 presupuestos/ # Gestión de presupuestos
+├── 📁 coldrooms/ # Gestión de cuartos fríos
+├── 📁 equipos/ # Gestión de equipos
+├── 📁 core_project/ # Configuración principal
+├── 📄 requirements.txt # Dependencias del proyecto
+├── 📄 manage.py # Script de gestión Django
+└── 📄 .env.example # Variables de entorno
 
 
 ## 🚀 Instalación
