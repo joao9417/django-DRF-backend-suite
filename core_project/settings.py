@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'rest_framework',
+    'drf_yasg',
+    # my apps
     'authentication',
     'presupuestos',
     'coldrooms',
