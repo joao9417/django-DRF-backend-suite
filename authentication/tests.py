@@ -10,7 +10,7 @@ class AuthTests(TestCase):
         Configuración inicial que se ejecuta antes de cada test
         """
         self.client = APIClient()
-        # ¡CORRIGE ESTAS URLS! Agrega 'api/v1/' al inicio
+        
         self.register_url = '/api/v1/register/'
         self.login_url = '/api/v1/login/'
         self.profile_url = '/api/v1/profile/'

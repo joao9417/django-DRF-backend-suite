@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 user = get_user_model()
 
-# creo modelo Especialidad para manejar las especialidades de los proyectos
+# se creo modelo Especialidad para manejar las especialidades de los proyectos
 
 class Especialidad(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
@@ -16,7 +16,7 @@ class Especialidad(models.Model):
         return self.nombre
     
 
-# creo modelo Presupuesto para manejar los presupuestos de los proyectos
+# se creo modelo Presupuesto para manejar los presupuestos de los proyectos
 
 class Presupuesto(models.Model):
     

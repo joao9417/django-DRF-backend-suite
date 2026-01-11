@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from .models import Profile
 
 #serializador para el registro de usuario
-#uso Serializer porque se controla manualmente como se crean los datos
 class UserRegistrationSerializer(serializers.Serializer):
     """
     Serializer para registro de usuarios.
@@ -34,7 +33,7 @@ class UserRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError({
                 'password_confirm': 'Las contraseñas no coinciden.'
             })
-        #1b. correo unico (validacion HTTP 400)
+        #1b. Correo unico (validacion HTTP 400)
         if User.objects.filter(email=data['email']).exists():
             raise serializers.ValidationError({
                 'email': 'Este correo electronico ya esta registrado.'
@@ -45,7 +44,7 @@ class UserRegistrationSerializer(serializers.Serializer):
                 'username': 'Este nombre de usuario ya esta en uso.'
             })
         
-        #1d. Validacion fuerte de contraseña
+        #2. Validacion fuerte de contraseña
         password = data['password']
 
         #validar longitud minima
@@ -70,7 +69,7 @@ class UserRegistrationSerializer(serializers.Serializer):
             })
         
         return data
-    #2. Creacion de usuario y perfil (crear usuario en BD)
+    #3. Creacion de usuario y perfil (crear usuario en BD)
     def create(self, validated_data):
         #extraer el campo cargo antes de crear el objeto user
         cargo = validated_data.pop('cargo')
@@ -82,7 +81,7 @@ class UserRegistrationSerializer(serializers.Serializer):
             password=validated_data['password'] #create_user se encarga del hashing
         )
 
-        #crear el objeto profile y vincularlo al nuevo user
+        #se crear el objeto profile y vincularlo al nuevo user
         Profile.objects.create(
             user=user,
             cargo=cargo

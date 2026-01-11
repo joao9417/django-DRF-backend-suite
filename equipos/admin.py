@@ -499,6 +499,3 @@ class ResistenciaAdmin(admin.ModelAdmin):
 admin.site.site_header = "Sistema de Presupuestos - Refrigeración"
 admin.site.site_title = "Admin Presupuestos"
 admin.site.index_title = "Administración del Sistema"
-
-# Agrupar modelos relacionados en el admin
-# Nota: Django automáticamente agrupa por app, pero podemos personalizar más
