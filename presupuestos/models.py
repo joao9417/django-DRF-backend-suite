@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
 
-user = get_user_model()
+User = get_user_model()
 
 # se creo modelo Especialidad para manejar las especialidades de los proyectos
 
@@ -62,7 +62,7 @@ class Presupuesto(models.Model):
     activo = models.BooleanField(default=True)
     
     creado_por = models.ForeignKey(
-        user,
+        User,
         on_delete=models.SET_NULL,
         null=True,
         related_name='presupuestos_creados'
@@ -73,5 +73,38 @@ class Presupuesto(models.Model):
         
     def __str__(self):
             return f"{self.consecutivo} - {self.nombre_proyecto}"
+    
+
+class PermisoPresupuesto(models.Model):
+     TIPOS_PERMISO = [
+          ('lectura', 'Solo lectura'),
+          ('escritura', 'Lectura y escritura'),
+     ]
+
+     presupuesto = models.ForeignKey(
+          Presupuesto,
+          on_delete=models.CASCADE,
+          related_name='permisos_compartidos'
+     )
+
+     usuario = models.ForeignKey(
+          User,
+          on_delete=models.CASCADE,
+          related_name='presupuestos_compartidos'
+     )
+
+     tipo_permiso = models.CharField(
+          max_length=10,
+          choices=TIPOS_PERMISO,
+          default='lectura'
+     )
+     fecha_concesion = models.DateTimeField(auto_now_add=True)
+
+     class Meta:
+          unique_together = ['presupuesto', 'usuario']
+          verbose_name_plural = "permisos de presupuestos"
+
+     def __str__(self):
+        return f"{self.usuario} - {self.presupuesto} ({self.tipo_permiso})"
     
     
