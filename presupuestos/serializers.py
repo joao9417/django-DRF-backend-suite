@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Presupuesto, Especialidad
+from .models import Presupuesto, Especialidad, PermisoPresupuesto
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -75,3 +75,35 @@ class PresupuestoSerializer(serializers.ModelSerializer):
         presupuesto.especialidades.set(especialidades_data)
         
         return presupuesto
+    
+class PermisoPresupuestoSerializer(serializers.ModelSerializer):
+    usuario_info = serializers.SerializerMethodField()
+    presupuesto_info = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PermisoPresupuesto
+        fields = [
+            'id', 
+            'presupuesto', 
+            'presupuesto_info',
+            'usuario', 
+            'usuario_info',
+            'tipo_permiso', 
+            'fecha_concesion'
+        ]
+        read_only_fields = ['fecha_concesion']
+    
+    def get_usuario_info(self, obj):
+        return {
+            'id': obj.usuario.id,
+            'username': obj.usuario.username,
+            'email': obj.usuario.email,
+            'full_name': obj.usuario.get_full_name()
+        }
+    
+    def get_presupuesto_info(self, obj):
+        return {
+            'id': obj.presupuesto.id,
+            'consecutivo': obj.presupuesto.consecutivo,
+            'nombre_proyecto': obj.presupuesto.nombre_proyecto
+        }
