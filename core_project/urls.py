@@ -35,7 +35,7 @@ schema_view = get_schema_view(
         
         ## Notas importantes
             -Todos los endpoints (excepto registro y login) requieren autenticacion
-            -Los tokens expiran despues de 5 minutos (configurable)
+            -Los tokens expiran despues de 60 minutos (configurable)
             -Usa el refresh token para obtener nuevos access tokens
         """,
         terms_of_service="https://www.misitio.com/terminos/",
@@ -52,7 +52,7 @@ urlpatterns = [
     #ruta administracion de django
     path('admin/', admin.site.urls),
 
-     # Documentación Swagger/OpenAPI
+    # Documentación Swagger/OpenAPI
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), 
          name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), 
@@ -66,7 +66,7 @@ urlpatterns = [
     path('api/v1/', include('authentication.urls')),
     
     #rutas de la aplicacion presupuestos
-    path('api/v1/presupuestos/', include('presupuestos.urls')),
+    path('api/v1/', include('presupuestos.urls')),
     
     #rutas de la aplicacion coldrooms
     path('api/v1/coldrooms/', include('coldrooms.urls')),

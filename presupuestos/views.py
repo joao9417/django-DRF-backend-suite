@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
-from .models import Presupuesto, PermisoPresupuesto
-from .serializers import PresupuestoSerializer, PermisoPresupuestoSerializer
+from .models import Presupuesto, PermisoPresupuesto, Especialidad
+from .serializers import PresupuestoSerializer, PermisoPresupuestoSerializer, EspecialidadSerializer
 from .permissions import PuedeEditarPresupuesto
 
 class PresupuestoViewSet(viewsets.ModelViewSet):
@@ -214,4 +214,12 @@ class PermisoPresupuestoViewSet(viewsets.ModelViewSet):
             )
         
         serializer.save()
+
+
+class EspecialidadViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet para listar especialidades disponibles.
+    """
+    queryset = Especialidad.objects.all()
+    serializer_class = EspecialidadSerializer
 

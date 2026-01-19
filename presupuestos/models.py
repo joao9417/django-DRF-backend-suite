@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
+from datetime import datetime
 
 User = get_user_model()
 
@@ -43,7 +44,7 @@ class Presupuesto(models.Model):
     
     fecha_creacion = models.DateField(auto_now_add=True)
     
-    consecutivo = models.CharField(max_length=50, unique=True)
+    consecutivo = models.CharField(max_length=50, unique=True, blank=True)
     
     validez_oferta = models.DateField()
     
@@ -67,7 +68,25 @@ class Presupuesto(models.Model):
         null=True,
         related_name='presupuestos_creados'
     )
-    
+
+    def save(self, *args, **kwargs):
+         if not self.consecutivo:
+              year = datetime.now().year
+              prefix = f"PR-{year}-"
+
+              ultimo_presupuesto = Presupuesto.objects.filter(
+                   consecutivo__startswith=prefix
+                ).order_by('-consecutivo').first()
+              if ultimo_presupuesto:
+                   ultimo_numero = int(ultimo_presupuesto.consecutivo.split('-')[-1])
+                   nuevo_numero = ultimo_numero + 1
+              else:
+                   nuevo_numero = 1
+
+              self.consecutivo = f"{prefix}{nuevo_numero:03d}"
+              super().save(*args, **kwargs)
+              
+                
     class Meta:
         ordering = ['-fecha_creacion']
         

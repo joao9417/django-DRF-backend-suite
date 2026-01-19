@@ -2,9 +2,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+
 from .serializers import UserRegistrationSerializer, CustomTokenOntainPairSerializer
+
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from .models import Profile
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
 class RegisterUserView(APIView):
@@ -179,3 +186,75 @@ class UserProfileView(APIView):
             return Response({
                 'error': 'Perfil no encontrado'
             }, status=status.HTTP_404_NOT_FOUND)
+        
+
+class LogoutView(APIView):
+    """
+    Endpoint para cerrar sesión del usuario autenticado.
+    
+    Invalida el token de refresh proporcionado.
+    
+    ## Headers requeridos:
+    
+    ```
+    Authorization: Bearer <tu_token_jwt>
+    ```
+    
+    ## Cuerpo de la solicitud:
+    
+    | Campo | Tipo | Descripción | Ejemplo |
+    |-------|------|-------------|---------|
+    | refresh | string | Token de refresh a invalidar | "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." |
+    
+    ## Respuestas:
+    
+    ### 205 Reset Content
+    Cierre de sesión exitoso.
+    ```json
+    {
+        "message": "Cierre de sesión exitoso."
+    }
+    ```
+    
+    ### 400 Bad Request
+    Error al procesar la solicitud.
+    ```json
+    {
+        "error": "Token inválido o expirado."
+    }
+    ```
+    """
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
+    def post(self, request):
+        """
+        POST /api/v1/logout/
+        
+        Cierra la sesión del usuario invalidando el token de refresh.
+        
+        Headers:
+            Authorization: Bearer <token_jwt>
+        
+        Body:
+            {
+                "refresh": "<token_de_refresh>"
+            }
+        
+        Returns:
+            Response: Mensaje de éxito o error
+        """
+        try:
+            print(f"Datos recibidos en logout: {request.data}")
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
+            return Response({"message": "Cierre de sesión exitoso."}, status=status.HTTP_205_RESET_CONTENT)
+            
+        except Exception as e:
+            print(f"Error en logout: {str(e)}")
+            return Response({"error": "Token inválido o expirado."}, status=status.HTTP_400_BAD_REQUEST)

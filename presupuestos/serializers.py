@@ -59,6 +59,7 @@ class PresupuestoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 
+            'consecutivo',
             'fecha_creacion', 
             'fecha_ultima_modificacion',
             'creado_por'

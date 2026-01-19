@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterUserView, CustomTokenObtainPairView, UserProfileView
+from .views import LogoutView, RegisterUserView, CustomTokenObtainPairView, UserProfileView
 from rest_framework_simplejwt.views import (TokenObtainPairView, TokenRefreshView,)
 
 urlpatterns = [
@@ -14,5 +14,8 @@ urlpatterns = [
 
     #endpoint para ver el perfil
     path('profile/', UserProfileView.as_view(), name='user_profile'),
+
+    #endpoint para logout
+    path('logout/', LogoutView.as_view(), name='user_logout'),
 
 ]
