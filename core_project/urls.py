@@ -69,10 +69,10 @@ urlpatterns = [
     path('api/v1/', include('presupuestos.urls')),
     
     #rutas de la aplicacion coldrooms
-    path('api/v1/coldrooms/', include('coldrooms.urls')),
+    path('api/v1/', include('coldrooms.urls')),
 
     #rutas de la aplicacion equipos
-    path('api/v1/equipos/', include('equipos.urls')),
+    path('api/v1/', include('equipos.urls')),
 ]
 
 # Servir archivos estáticos en desarrollo
