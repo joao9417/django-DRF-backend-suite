@@ -263,10 +263,23 @@ class BombaGlicolSerializer(EquipoSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = BombaGlicol
         fields = [
-            'id', 'cold_room', 'tipo_equipo', 'nombre', 'marca', 'modelo', 
-            'cantidad', 'ancho', 'alto', 'profundidad', 'tipo_bomba', 
-            'caudal_glicol', 'presion_descarga', 'material_carcasa', 'motores', 
-            'resistencias', 'creado_en', 'actualizado_en',
+            'id', 
+            'cold_room', 
+            'tipo_equipo', 
+            'nombre', 
+            'marca', 
+            'modelo', 
+            'cantidad', 
+            'tipo_bomba',
+            'caudal_nominal', 
+            'presion_trabajo', 
+            'altura_elevacion',
+            'temperatura_maxima',
+            'material_carcasa', 
+            'motores', 
+            'resistencias', 
+            'creado_en', 
+            'actualizado_en',
         ]
         read_only_fields = ['id', 'creado_en', 'actualizado_en']
     

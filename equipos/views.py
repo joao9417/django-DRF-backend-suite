@@ -2,8 +2,9 @@ from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.http import Http404
+from .models import Equipo
 
 from .models import (
     Evaporador, Compresor, Condensador, Deshumificador, 
@@ -156,12 +157,9 @@ class EquipoViewSet(viewsets.ModelViewSet):
         cold_room_id = request.query_params.get('cold_room_id')
         
         if not cold_room_id:
-            return Response(
-                {'error': 'Se requiere el parámetro cold_room_id'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'Se requiere el parámetro cold_room_id'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Verificar permisos sobre el cuarto frío
+        # Validacion de permisos
         user = request.user
         try:
             cold_room = ColdRoom.objects.get(id=cold_room_id)
@@ -176,23 +174,38 @@ class EquipoViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'Cuarto frío no encontrado'},
                 status=status.HTTP_404_NOT_FOUND
-            )
+            )     
         
-        # Obtener equipos del cuarto
-        equipos = self.get_queryset().filter(cold_room_id=cold_room_id)
-        serializer = self.get_serializer(equipos, many=True)
-        
-        # Calcular totales por cuarto
+
+        # Obtener equipos (se usan los modelos hijos para evitar error de clase abstracta)
+        modelos_hijos = [
+            Evaporador, Compresor, Condensador, Deshumificador, EnfriadorGlicol, Ventilador, BombaGlicol
+        ]
+
+        equipos_list = []
         potencia_total_kw = 0
         consumo_total_a = 0
+
+        # Iteramos por cada modelo buscando los del cuarto
+        for modelo in modelos_hijos:
+            qs = modelo.objects.filter(cold_room_id=cold_room_id)
+            for equipo in qs:
+                # Sumar potencia
+                p_total = getattr(equipo, 'potencia_total', {})
+                if isinstance(p_total, dict):
+                    potencia_total_kw += p_total.get('total', {}).get('kilowatts', 0)
+                
+                # Sumar consumo
+                c_total = getattr(equipo, 'consumo_total', {})
+                if isinstance(c_total, dict):
+                    consumo_total_a += c_total.get('total_amperios', 0)
+
+                equipos_list.append(equipo)
         
-        for equipo in equipos:
-            if hasattr(equipo, 'potencia_total'):
-                potencia_total_kw += equipo.potencia_total.get('total', {}).get('kilowatts', 0)
-            
-            if hasattr(equipo, 'consumo_total'):
-                consumo_total_a += equipo.consumo_total.get('total_amperios', 0)
+        # Serializacion, tomamos el listado de objetos que ya recoletamos
+        serializer = EquipoPolymorphicSerializer(equipos_list, many=True)
         
+        # Respuesta final        
         return Response({
             'cold_room': {
                 'id': cold_room.id,
@@ -202,11 +215,12 @@ class EquipoViewSet(viewsets.ModelViewSet):
             },
             'equipos': serializer.data,
             'resumen_electrico': {
-                'cantidad_equipos': equipos.count(),
+                'cantidad_equipos': len(equipos_list),
                 'potencia_total_kw': potencia_total_kw,
                 'consumo_total_a': consumo_total_a,
             }
         })
+    
     
     @action(detail=True, methods=['get'])
     def componentes(self, request, pk=None):
@@ -270,7 +284,7 @@ class EquipoViewSet(viewsets.ModelViewSet):
                     {'nombre': 'ancho', 'tipo': 'decimal', 'unidad': 'mm', 'requerido': True},
                     {'nombre': 'alto', 'tipo': 'decimal', 'unidad': 'mm', 'requerido': True},
                     {'nombre': 'profundidad', 'tipo': 'decimal', 'unidad': 'mm', 'requerido': True},
-                    {'nombre': 'tipo_evaporador', 'tipo': 'choice', 'opciones': [
+                    {'nombre': 'tipo_evaporador', 'tipo': 'choice', 'choices': [
                         {'valor': 'aire_forzado', 'display': 'Aire Forzado'},
                         {'valor': 'estatica', 'display': 'Estática'},
                         {'valor': 'cascada', 'display': 'Cascada'},
@@ -341,13 +355,16 @@ class EquipoViewSet(viewsets.ModelViewSet):
                 'display': 'Bomba de Glicol',
                 'descripcion': 'Bombea el glicol en el sistema',
                 'campos_especificos': [
-                    {'nombre': 'tipo_bomba', 'tipo': 'choice', 'opciones': [
+                    {'nombre': 'tipo_bomba', 'tipo': 'choice', 'choices': [
                         {'valor': 'centrifuga', 'display': 'Centrífuga'},
                         {'valor': 'piston', 'display': 'Pistón'},
-                        {'nombre': 'diafragma', 'display': 'Diafragma'},
-                        {'nombre': 'tornillo', 'display': 'Tornillo'},
+                        {'valor': 'diafragma', 'display': 'Diafragma'},
+                        {'valor': 'tornillo', 'display': 'Tornillo'},
                     ], 'requerido': True},
                     {'nombre': 'caudal_nominal', 'tipo': 'decimal', 'unidad': 'L/min', 'requerido': True},
+                    {'nombre': 'presion_trabajo', 'tipo': 'decimal', 'unidad': 'bar', 'requerido': True},
+                    {'nombre': 'altura_elevacion', 'tipo': 'decimal', 'unidad': 'm', 'requerido': True},
+                    {'nombre': 'temperatura_maxima', 'tipo': 'decimal', 'unidad': '°C', 'requerido': True},
                 ]
             },
         ]
