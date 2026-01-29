@@ -45,7 +45,13 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
         serializer.save(creado_por=self.request.user)
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Presupuesto.objects.all()
+        
+        # Filtrar por estado activo/inactivo (Papelera)
+        if self.request.query_params.get('activo') == 'False':
+             queryset = queryset.filter(activo=False)
+        else:
+             queryset = queryset.filter(activo=True)
         user = self.request.user
 
         # Si es superusuario, ve todos
