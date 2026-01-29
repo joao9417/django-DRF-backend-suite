@@ -84,7 +84,8 @@ class Presupuesto(models.Model):
                    nuevo_numero = 1
 
               self.consecutivo = f"{prefix}{nuevo_numero:03d}"
-              super().save(*args, **kwargs)
+         
+         super().save(*args, **kwargs)
               
                 
     class Meta:

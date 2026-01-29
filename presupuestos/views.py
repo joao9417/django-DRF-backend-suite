@@ -31,6 +31,19 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
     serializer_class = PresupuestoSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        """
+        Permitir obtener objetos eliminados si es para restaurarlos
+        """
+        if self.action in ['update', 'partial_update'] and self.request.data.get('activo') is True:
+            # Bypass del queryset filtrado
+            from django.shortcuts import get_object_or_404
+            obj = get_object_or_404(Presupuesto.objects.all(), pk=self.kwargs['pk'])
+            self.check_object_permissions(self.request, obj)
+            return obj
+            
+        return super().get_object()
+
     def get_permissions(self):
         """
         Asignar permisos especificos por accion        
@@ -45,7 +58,13 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
         serializer.save(creado_por=self.request.user)
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Presupuesto.objects.all()
+        
+        # Filtrar por estado activo/inactivo (Papelera)
+        if self.request.query_params.get('activo') == 'False':
+             queryset = queryset.filter(activo=False)
+        else:
+             queryset = queryset.filter(activo=True)
         user = self.request.user
 
         # Si es superusuario, ve todos
@@ -192,6 +211,40 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+    def destroy(self, request, *args, **kwargs):
+        """
+        Sobrescribe el metodo de eliminacion fisica por una eliminacion logica
+        """
+
+        instance = self.get_object()
+
+        #verificamos que solo el creador o un admin pueda borrar
+        if not request.user.is_superuser and instance.creado_por != request.user:
+            return Response(
+                {"error": "No tienes permiso para eliminar este presupuesto."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        #borrado logico
+        instance.activo = False
+        instance.save()
+
+        return Response(
+            {"message": "Presupuesto eliminado exitosamente."},
+            status=status.HTTP_204_NO_CONTENT
+        ) 
+    
+    @action(detail=True, methods=['post'])
+    def restaurar(self, request, pk=None):
+        """
+        Accion para recuperar un presupuesto eliminado logicamente
+        """
+        try:
+            presupuesto = Presupuesto.objects.get(pk=pk)
+            presupuesto.activo = True
+            presupuesto.save()
+            return Response({"message":"Presupuesto restaurado correctamente."})
+        except Presupuesto.DoesNotExist:
+            return Response({"error":"Presupuesto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
 class PermisoPresupuestoViewSet(viewsets.ModelViewSet):
     queryset = PermisoPresupuesto.objects.all()
