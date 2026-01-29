@@ -31,6 +31,19 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
     serializer_class = PresupuestoSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        """
+        Permitir obtener objetos eliminados si es para restaurarlos
+        """
+        if self.action in ['update', 'partial_update'] and self.request.data.get('activo') is True:
+            # Bypass del queryset filtrado
+            from django.shortcuts import get_object_or_404
+            obj = get_object_or_404(Presupuesto.objects.all(), pk=self.kwargs['pk'])
+            self.check_object_permissions(self.request, obj)
+            return obj
+            
+        return super().get_object()
+
     def get_permissions(self):
         """
         Asignar permisos especificos por accion        
