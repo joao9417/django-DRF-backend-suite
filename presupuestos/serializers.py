@@ -16,6 +16,12 @@ class PresupuestoSerializer(serializers.ModelSerializer):
         read_only=True
     )
     
+    # Para lectura: ID del ingeniero para formularios de edición
+    ingeniero_responsable_id = serializers.IntegerField(
+        source='ingeniero_responsable.id',
+        read_only=True
+    )
+    
     # Para escritura: aceptar ID de usuario
     ingeniero_responsable = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
@@ -23,8 +29,8 @@ class PresupuestoSerializer(serializers.ModelSerializer):
         required=False  # No requerido, se usará el usuario actual si no se proporciona
     )
     
-    # Mostrar detalles de especialidades
-    especialidades_info = EspecialidadSerializer(
+    # Mostrar detalles de especialidades (renombrado a _detalle para consistencia con frontend)
+    especialidades_detalle = EspecialidadSerializer(
         source='especialidades',
         many=True,
         read_only=True
@@ -43,9 +49,10 @@ class PresupuestoSerializer(serializers.ModelSerializer):
             'id',
             'nombre_proyecto',
             'ingeniero_responsable',  # Para escritura (ID)
+            'ingeniero_responsable_id', # Para lectura (ID)
             'ingeniero_responsable_nombre',  # Para lectura (nombre)
             'especialidades',  # Para escritura (lista de IDs)
-            'especialidades_info',  # Para lectura (detalles)
+            'especialidades_detalle',  # Para lectura (detalles)
             'fecha_creacion',
             'consecutivo',
             'validez_oferta',
