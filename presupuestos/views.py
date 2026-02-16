@@ -6,6 +6,13 @@ from django.contrib.auth.models import User
 from .models import Presupuesto, PermisoPresupuesto, Especialidad
 from .serializers import PresupuestoSerializer, PermisoPresupuestoSerializer, EspecialidadSerializer
 from .permissions import PuedeEditarPresupuesto
+from coldrooms.models import ColdRoom
+from equipos.models import (
+    Evaporador, Compresor, Deshumificador, EnfriadorGlicol, 
+    Condensador, Ventilador, BombaGlicol, Motor, Resistencia
+)
+from django.contrib.contenttypes.models import ContentType
+import copy
 
 class PresupuestoViewSet(viewsets.ModelViewSet):
     """
@@ -246,7 +253,162 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
         except Presupuesto.DoesNotExist:
             return Response({"error":"Presupuesto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=True, methods=['post'])
+    def transferir_copia(self, request, pk=None):
+        """
+        Clona el presupuesto y lo asigna a otro usuario (Préstamo).
+        """
+        presupuesto = self.get_object()
+        
+        # Verificar permisos: solo el creador puede prestar
+        if presupuesto.creado_por != request.user:
+            return Response(
+                {"error": "Solo el creador puede prestar el presupuesto."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        target_user_id = request.data.get('usuario_id')
+        if not target_user_id:
+            return Response({"error": "ID de usuario destino requerido."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            target_user = User.objects.get(id=target_user_id)
+        except User.DoesNotExist:
+            return Response({"error": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Clonar presupuesto
+        nuevo_presupuesto = self._clonar_presupuesto(presupuesto, nuevo_creador=target_user)
+        
+        # Actualizar campos de préstamo
+        nuevo_presupuesto.es_prestamo = True
+        nuevo_presupuesto.dueno_original = request.user
+        nuevo_presupuesto.presupuesto_padre = presupuesto # Opcional: mantener rastro
+        nuevo_presupuesto.save()
+        
+        return Response({
+            "message": f"Presupuesto prestado a {target_user.username}",
+            "id": nuevo_presupuesto.id
+        })
+
+    @action(detail=True, methods=['post'])
+    def devolver_version(self, request, pk=None):
+        """
+        Devuelve una versión modificada al dueño original.
+        """
+        presupuesto = self.get_object()
+        
+        # Verificar que es un préstamo
+        if not presupuesto.es_prestamo or not presupuesto.dueno_original:
+            return Response(
+                {"error": "Este presupuesto no es un préstamo."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Verificar que el usuario actual es quien tiene el préstamo
+        if presupuesto.creado_por != request.user:
+            return Response(
+                {"error": "No tienes permiso para devolver este presupuesto."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        dueno_original = presupuesto.dueno_original
+        
+        # Clonar de vuelta al dueño original
+        nuevo_presupuesto = self._clonar_presupuesto(presupuesto, nuevo_creador=dueno_original)
+        
+        # Configurar como versión devuelta (ya no es préstamo)
+        nuevo_presupuesto.es_prestamo = False
+        nuevo_presupuesto.dueno_original = None
+        nuevo_presupuesto.presupuesto_padre = presupuesto
+        
+        # Actualizar nombre
+        nuevo_presupuesto.nombre_proyecto = f"{presupuesto.nombre_proyecto} - Rev. {request.user.username}"
+        nuevo_presupuesto.save()
+        
+        return Response({
+            "message": "Versión devuelta al dueño original.",
+            "id": nuevo_presupuesto.id
+        })
+
+    def _clonar_presupuesto(self, presupuesto_original, nuevo_creador):
+        """
+        Método auxiliar para realizar copia profunda de un presupuesto y sus items.
+        """
+        # 1. Copiar Presupuesto base
+        nuevo = Presupuesto.objects.get(pk=presupuesto_original.pk)
+        nuevo.pk = None
+        nuevo.consecutivo = "" # Se generará uno nuevo al guardar
+        nuevo.creado_por = nuevo_creador
+        nuevo.ingeniero_responsable = nuevo_creador # O mantener el original? Asumimos el nuevo
+        nuevo.save()
+        
+        # 2. Copiar M2M Especialidades
+        nuevo.especialidades.set(presupuesto_original.especialidades.all())
+        
+        # 3. Copiar ColdRooms y sus Equipos
+        for cr in presupuesto_original.cold_rooms.all():
+            old_cr_pk = cr.pk
+            cr.pk = None
+            cr.presupuesto = nuevo
+            cr.save()
+            
+            # Recuperar instancia original para buscar hijos
+            cr_original = ColdRoom.objects.get(pk=old_cr_pk)
+            
+            # Copiar Equipos por tipo
+            equipo_models = [
+                Evaporador, Compresor, Deshumificador, EnfriadorGlicol, 
+                Condensador, Ventilador, BombaGlicol
+            ]
+            
+            for ModelClass in equipo_models:
+                # Buscar equipos relacionados a este ColdRoom
+                # Usamos el related_name inverso predeterminado o inferido
+                # ColdRoom tiene related_name="%(app_label)s_%(class)s_related" en el modelo abstracto Equipo
+                related_name = f"{ModelClass._meta.app_label}_{ModelClass._meta.model_name}_related"
+                
+                if hasattr(cr_original, related_name):
+                    manager = getattr(cr_original, related_name)
+                    for equipo in manager.all():
+                        self._clonar_equipo(equipo, cr)
+
+        return nuevo
+
+    def _clonar_equipo(self, equipo_original, nuevo_cold_room):
+        """Helper para clonar equipo y sus componentes"""
+        old_pk = equipo_original.pk
+        
+        # Clonar equipo
+        equipo_original.pk = None
+        equipo_original.cold_room = nuevo_cold_room
+        equipo_original.save()
+        new_equipo = equipo_original
+        
+        # Recuperar original para componentes
+        # Necesitamos la clase concreta para consultar generic relations si no estan precargadas
+        # Pero GenericRelation 'motores' y 'resistencias' estan en el modelo
+        
+        # Sin embargo, al hacer .pk = None, perdimos el acceso a los reversos del objeto original en memoria si no tuvimos cuidado
+        # Mejor re-consultar el original usando old_pk y la clase del objeto
+        original_db = type(equipo_original).objects.get(pk=old_pk)
+        
+        # Copiar Motores
+        if hasattr(original_db, 'motores'):
+            for motor in original_db.motores.all():
+                motor.pk = None
+                motor.content_object = new_equipo
+                motor.save()
+                
+        # Copiar Resistencias
+        if hasattr(original_db, 'resistencias'):
+            for res in original_db.resistencias.all():
+                res.pk = None
+                res.content_object = new_equipo
+                res.save()
 class PermisoPresupuestoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar permisos de presupuestos.
+    """
     queryset = PermisoPresupuesto.objects.all()
     serializer_class = PermisoPresupuestoSerializer
     permission_classes = [IsAuthenticated]

@@ -69,6 +69,27 @@ class Presupuesto(models.Model):
         related_name='presupuestos_creados'
     )
 
+    # Campos para flujo de prestamo
+    es_prestamo = models.BooleanField(default=False)
+    
+    presupuesto_padre = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='versiones_derivadas',
+        help_text='Presupuesto original del cual se derivó este préstamo o versión'
+    )
+    
+    dueno_original = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='presupuestos_prestados',
+        help_text='Dueño original del presupuesto si es un préstamo'
+    )
+
     def save(self, *args, **kwargs):
          if not self.consecutivo:
               year = datetime.now().year

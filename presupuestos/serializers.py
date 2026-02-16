@@ -63,13 +63,20 @@ class PresupuestoSerializer(serializers.ModelSerializer):
             'fecha_ultima_modificacion',
             'version_presupuesto',
             'activo',
+            'es_prestamo',
+            'presupuesto_padre',
+            'dueno_original',
+            'creado_por',
         ]
         read_only_fields = [
             'id', 
             'consecutivo',
             'fecha_creacion', 
             'fecha_ultima_modificacion',
-            'creado_por'
+            'creado_por',
+            'es_prestamo',
+            'presupuesto_padre',
+            'dueno_original'
         ]
     
     def create(self, validated_data):
