@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LogoutView, RegisterUserView, CustomTokenObtainPairView, UserProfileView
+from .views import LogoutView, RegisterUserView, CustomTokenObtainPairView, UserProfileView, UserListView
 from rest_framework_simplejwt.views import (TokenObtainPairView, TokenRefreshView,)
 
 urlpatterns = [
@@ -17,5 +17,8 @@ urlpatterns = [
 
     #endpoint para logout
     path('logout/', LogoutView.as_view(), name='user_logout'),
+    
+    #endpoint para listar usuarios (compartir)
+    path('users/', UserListView.as_view(), name='user_list'),
 
 ]

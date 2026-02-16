@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.models import User
 
 from .serializers import UserRegistrationSerializer, CustomTokenOntainPairSerializer
 
@@ -258,3 +259,13 @@ class LogoutView(APIView):
         except Exception as e:
             print(f"Error en logout: {str(e)}")
             return Response({"error": "Token inválido o expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserListView(APIView):
+    """
+    Lista usuarios para funcionalidad de compartir.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        users = User.objects.all().values('id', 'username', 'email', 'first_name', 'last_name')
+        return Response(users)
