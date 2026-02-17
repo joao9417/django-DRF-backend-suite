@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
+from django.db.models import Q
 from .models import Presupuesto, PermisoPresupuesto, Especialidad
 from .serializers import PresupuestoSerializer, PermisoPresupuestoSerializer, EspecialidadSerializer
 from .permissions import PuedeEditarPresupuesto
@@ -91,7 +92,17 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
         compartidos = queryset.filter(id__in=presupuestos_compartidos_ids)
 
         # Unir todos
-        return (mis_presupuestos | como_responsable | compartidos).distinct()
+        queryset_final = (mis_presupuestos | como_responsable | compartidos).distinct()
+
+        # FILTRADO DE VERSIONES:
+        # Solo aplicar filtro de "Esconder Versiones" en el LISTADO principal (Dashboard)
+        # Para detalles (retrieve), updates, etc., necesitamos permitir acceso si se conoce el ID
+        if self.action == 'list':
+            return queryset_final.filter(
+                Q(presupuesto_padre__isnull=True) | Q(es_prestamo=True)
+            )
+        
+        return queryset_final
     
 
     def check_object_permissions(self, request, obj):
@@ -319,7 +330,10 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
         # Configurar como versión devuelta (ya no es préstamo)
         nuevo_presupuesto.es_prestamo = False
         nuevo_presupuesto.dueno_original = None
-        nuevo_presupuesto.presupuesto_padre = presupuesto
+        
+        # FIX: El padre debe ser el Maestro Original (el abuelo del prestamo actual), no el Préstamo en sí.
+        # Si 'presupuesto' es un préstamo, su 'presupuesto_padre' es el Maestro.
+        nuevo_presupuesto.presupuesto_padre = presupuesto.presupuesto_padre if presupuesto.presupuesto_padre else presupuesto
         
         # Actualizar nombre
         nuevo_presupuesto.nombre_proyecto = f"{presupuesto.nombre_proyecto} - Rev. {request.user.username}"
@@ -329,6 +343,51 @@ class PresupuestoViewSet(viewsets.ModelViewSet):
             "message": "Versión devuelta al dueño original.",
             "id": nuevo_presupuesto.id
         })
+
+    @action(detail=True, methods=['get'])
+    def versiones(self, request, pk=None):
+        """
+        Devuelve todas las versiones asociadas a un presupuesto (Padre + Hijos devueltos)
+        """
+        presupuesto = self.get_object()
+        
+        # SI ES UN PRÉSTAMO: No mostrar historial de versiones del dueño
+        # El usuario que tiene el préstamo solo debe ver su copia actual.
+        if presupuesto.es_prestamo:
+             return Response([])
+        
+        # Determinar quién es el padre
+        # Si tiene padre, el padre es ese. Si no, él mismo es el padre.
+        padre = presupuesto.presupuesto_padre if presupuesto.presupuesto_padre else presupuesto
+        
+        # Buscar:
+        # 1. El padre mismo
+        # 2. Hijos del padre que NO sean préstamos activos (es decir, versiones devueltas)
+        versiones = Presupuesto.objects.filter(
+            Q(pk=padre.pk) | Q(presupuesto_padre=padre)
+        ).filter(
+            activo=True
+        ).exclude(
+            es_prestamo=True # Excluir copias que están prestadas actualmente
+        ).order_by('-fecha_ultima_modificacion')
+        
+        # FIX: Filtrar versiones que el usuario no tiene permiso de ver
+        # Usamos el mismo criterio que get_queryset pero manualmente porque estamos fuera de él
+        user = request.user
+        if not user.is_superuser:
+             # IDs permitidos para el usuario
+             permisos_ids = PermisoPresupuesto.objects.filter(usuario=user).values_list('presupuesto_id', flat=True)
+             
+             # Filtramos la lista de versiones
+             # Debe ser creado por el usuario O ser responsable O tener permiso compartido
+             versiones = versiones.filter(
+                 Q(creado_por=user) | 
+                 Q(ingeniero_responsable=user) |
+                 Q(id__in=permisos_ids)
+             ).distinct()
+
+        serializer = self.get_serializer(versiones, many=True)
+        return Response(serializer.data)
 
     def _clonar_presupuesto(self, presupuesto_original, nuevo_creador):
         """
