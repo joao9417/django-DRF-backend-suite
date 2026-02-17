@@ -42,6 +42,11 @@ class PresupuestoSerializer(serializers.ModelSerializer):
         queryset=Especialidad.objects.all(),
         write_only=True
     )
+
+    creado_por_username = serializers.CharField(
+        source='creado_por.username',
+        read_only=True
+    )
     
     class Meta:
         model = Presupuesto
@@ -67,6 +72,7 @@ class PresupuestoSerializer(serializers.ModelSerializer):
             'presupuesto_padre',
             'dueno_original',
             'creado_por',
+            'creado_por_username',
         ]
         read_only_fields = [
             'id', 
