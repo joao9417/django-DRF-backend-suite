@@ -1,0 +1,30 @@
+[
+    {
+        "model": "presupuestos.especialidad",
+        "pk": 1,
+        "fields": {
+            "nombre": "CO2"
+        }
+    },
+    {
+        "model": "presupuestos.especialidad",
+        "pk": 2,
+        "fields": {
+            "nombre": "NH3"
+        }
+    },
+    {
+        "model": "presupuestos.especialidad",
+        "pk": 3,
+        "fields": {
+            "nombre": "Freon"
+        }
+    },
+    {
+        "model": "presupuestos.especialidad",
+        "pk": 4,
+        "fields": {
+            "nombre": "Glicol"
+        }
+    }
+]
